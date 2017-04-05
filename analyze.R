@@ -4,11 +4,11 @@ library(reshape2)
 library(survey)
 
 # Read IPUMS export
-ipums.orig <- read_csv("usa_00028.csv", col_types="cicdi")
+ipums.orig <- read_csv("usa_00028.csv", col_types="ciidi")
 
 # Filter to only observations that include wages
 ipums <- ipums.orig %>%
-  filter(INCWAGE < 999998)
+  filter(INCWAGE > 0 & INCWAGE < 999998)
 
 # Convert years to a factor
 ipums$year <- as.factor(ipums$YEAR)
@@ -16,27 +16,25 @@ ipums$year <- as.factor(ipums$YEAR)
 # Convert TRANWORK
 ipums$commute <- NA
 
-ipums$commute[ipums$TRANWORK >= 10 & ipums$TRANWORK < 20] <- "Car"
-ipums$commute[ipums$TRANWORK >= 30 & ipums$TRANWORK <= 31] <- "Bus"
-ipums$commute[ipums$TRANWORK == 33] <- "Subway"
+ipums$commute[ipums$TRANWORK >= 10 & ipums$TRANWORK <= 15] <- "Car/Truck/Van"
+ipums$commute[ipums$TRANWORK >= 30 & ipums$TRANWORK <= 32] <- "Bus/Streetcar"
+ipums$commute[ipums$TRANWORK == 33] <- "Subway/Elevated"
 ipums$commute[ipums$TRANWORK == 70] <- "Worked from home"
 
-ipums$commute <- factor(ipums$commute, level=c("Car", "Bus", "Subway", "Worked from home"))
+ipums$commute <- factor(ipums$commute, level=c("Car/Truck/Van", "Bus/Streetcar", "Subway/Elevated", "Worked from home"))
 
-# Compute totals by year and commute
-ipums.totals <- ipums %>%
-  group_by(year, commute) %>%
-  summarise(pop = sum(PERWT))
+# Read occupation codes
+occ <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/occ/description.2010.csv", col_types="ic")
 
-ipums.totals.pivot <- dcast(ipums.totals, commute ~ year, value.var="pop")
+occ$description <- factor(occ$description)
 
-# Compute shares by year and commute
-ipums.shares <- ipums.totals %>%
-  group_by(year) %>%
-  mutate(pct = pop / sum(pop)) %>%
-  ungroup()
+# Read CPI rates
+cpi <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/year/cpi.csv", col_types="cd")
 
-ipums.shares.pivot <- dcast(ipums.shares, commute ~ year, value.var="pct")
+# Join CPI to ipums and adjust to 2015 dollars
+# ipums.cpi <- ipums %>%
+#   left_join(cpi, by = "year") %>%
+#   mutate(incwage.adj = INCWAGE * 237.0 / cpi)
 
 # Compute mean wages by year
 # Perfect match for results computed with Hmisc (see below)
@@ -77,7 +75,18 @@ ipums.means <- ipums %>%
     se = sd / sqrt(pop)
   )
 
-ipums.means.pivot <- dcast(ipums.means, commute ~ year, value.var="mean.wages")
+# CPI adjust results
+ipums.means.cpi <- ipums.means %>%
+  left_join(cpi, by = "year") %>%
+  mutate(
+    mean.wages = mean.wages * 237.0 / cpi,
+    v = v * 237.0 / cpi,
+    sd = sd * 237.0 / cpi,
+    se = se * 237.0 / cpi
+  ) %>%
+  select(-cpi)
+
+write_csv(ipums.means.cpi, "results/ipums.means.cpi.csv")
 
 # Compute mean wages for home workers by year and occupation
 ipums.occ.means <- ipums %>%
@@ -89,17 +98,23 @@ ipums.occ.means <- ipums %>%
     v = (sum(PERWT * (INCWAGE - mean.wages)^2)) / (pop - 1),
     sd = sqrt(v),
     se = sd / sqrt(pop)
-  )
+  ) %>%
+  left_join(occ, by = c("OCC2010" = "occ"))
+
+# CPI adjust results
+ipums.occ.means.cpi <- ipums.occ.means %>%
+  left_join(cpi, by = "year") %>%
+  mutate(
+    mean.wages = mean.wages * 237.0 / cpi,
+    v = v * 237.0 / cpi,
+    sd = sd * 237.0 / cpi,
+    se = se * 237.0 / cpi
+  ) %>%
+  select(-cpi)
 
 ipums.occ.shares <- ipums.occ.means %>%
   group_by(year) %>%
   mutate(pct = pop / sum(pop)) %>%
   ungroup()
 
-ipums.occ.totals.pivot <- dcast(ipums.occ.means, OCC2010 ~ year, value.var="pop")
-ipums.occ.shares.pivot <- dcast(ipums.occ.shares, OCC2010 ~ year, value.var="pop")
-ipums.occ.means.pivot <- dcast(ipums.occ.means, OCC2010 ~ year, value.var="mean.wages")
-
-write_csv(ipums.occ.totals.pivot, "ipums.occ.totals.pivot.csv")
-write_csv(ipums.occ.shares.pivot, "ipums.occ.shares.pivot.csv")
-write_csv(ipums.occ.means.pivot, "ipums.occ.means.pivot.csv")
+write_csv(ipums.occ.means.cpi, "results/ipums.occ.means.cpi.csv")

@@ -1,3 +1,5 @@
+# DEPRECATED: THIS DOES NOT MAKE SURVEY FASTER
+
 # library(readr)
 # library(dplyr)
 # library(reshape2)
