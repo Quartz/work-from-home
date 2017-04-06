@@ -133,3 +133,31 @@ ipums.jobs.big.means.cpi <- ipums.jobs.means.cpi %>%
   ungroup()
 
 write_csv(ipums.jobs.big.means.cpi, "results/ipums.jobs.big.means.cpi.csv")
+
+# Compute mean wages by job category and commute type for 2015 only
+ipums.jobs.2015.means <- ipums %>%
+  filter(year == 2015) %>%
+  group_by(jobs, commute) %>%
+  summarise(
+    pop = sum(PERWT),
+    mean.wages = sum(INCWAGE * PERWT) / pop,
+    v = (sum(PERWT * (INCWAGE - mean.wages)^2)) / (pop - 1),
+    sd = sqrt(v),
+    se = sd / sqrt(pop)
+  )
+
+write_csv(ipums.jobs.2015.means, "results/ipums.jobs.2015.means.csv")
+
+# Compute fraction of occupation that homeworks by year
+ipums.jobs.shares <- ipums %>%
+  group_by(year, jobs, commute) %>%
+  summarise(
+    pop = sum(PERWT)
+  ) %>%
+  mutate(
+    share = pop / sum(pop)
+  )
+
+write_csv(ipums.jobs.shares, "results/ipums.jobs.shares.csv")
+
+
