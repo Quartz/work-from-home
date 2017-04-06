@@ -3,6 +3,11 @@ library(dplyr)
 library(reshape2)
 library(survey)
 
+# Export 28 from IPUMS
+# "Method of travel to work, wages, and occupation (1980, 1990, 2000-2015) w/ CSV"
+
+# TODO: Exclude explicitly self-employed workers
+
 # Read IPUMS export
 ipums.orig <- read_csv("usa_00028.csv", col_types="ciidi")
 
