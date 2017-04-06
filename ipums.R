@@ -3,17 +3,17 @@ library(dplyr)
 library(reshape2)
 library(survey)
 
-# Export 28 from IPUMS
-# "Method of travel to work, wages, and occupation (1980, 1990, 2000-2015) w/ CSV"
+# Export 29 from IPUMS
+# "Method of travel to work, wages, occupation, class of worker, and usual hours worked (1980, 1990, 2000-2015) w/ CSV"
 
 # TODO: Exclude explicitly self-employed workers
 
 # Read IPUMS export
-ipums.orig <- read_csv("usa_00028.csv", col_types="ciidi")
+ipums.orig <- read_csv("usa_00029.csv", col_types="ciiiiidi")
 
-# Filter to only observations that include wages
+# Filter to only full-time wageworkers (with wages and not self-employed)
 ipums <- ipums.orig %>%
-  filter(INCWAGE > 0 & INCWAGE < 999998)
+  filter(INCWAGE > 0 & INCWAGE < 999998 & CLASSWKR == 2 & UHRSWORK >= 35)
 
 # Convert years to a factor
 ipums$year <- as.factor(ipums$YEAR)
@@ -21,14 +21,17 @@ ipums$year <- as.factor(ipums$YEAR)
 # Convert TRANWORK
 ipums$commute <- NA
 
-ipums$commute[ipums$TRANWORK >= 10 & ipums$TRANWORK <= 15] <- "Car/Truck/Van"
-ipums$commute[ipums$TRANWORK >= 30 & ipums$TRANWORK <= 32] <- "Bus/Streetcar"
-ipums$commute[ipums$TRANWORK == 33] <- "Subway/Elevated"
-ipums$commute[ipums$TRANWORK == 70] <- "Worked from home"
+ipums$commute[ipums$TRANWORK >= 10 & ipums$TRANWORK <= 20] <- "Private vehicle"
+ipums$commute[ipums$TRANWORK >= 30 & ipums$TRANWORK <= 36] <- "Public transit"
+ipums$commute[ipums$TRANWORK == 40] <- "Bicycle"
+ipums$commute[ipums$TRANWORK == 50] <- "Walked"
+ipums$commute[ipums$TRANWORK == 60] <- "Other"
+ipums$commute[ipums$TRANWORK == 70] <- "Worked at home"
 
-ipums$commute <- factor(ipums$commute, level=c("Car/Truck/Van", "Bus/Streetcar", "Subway/Elevated", "Worked from home"))
+ipums$commute <- factor(ipums$commute, level=c("Private vehicle", "Public transit", "Bicycle", "Walked", "Other", "Worked at home"))
 
 # Recode OCC2010
+# TKTK: Can I match this to the ATUS codings?
 ipums$jobs <- NA
 
 ipums$jobs[ipums$OCC2010 >= 10 & ipums$OCC2010 <= 430] <- "Management"
@@ -83,7 +86,7 @@ cpi <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/yea
 
 # Compute mean wages by year and commute
 # Perfect match for results from IPUMS online
-ipums.means <- ipums %>%
+ipums.commute.means <- ipums %>%
   group_by(year, commute) %>%
   summarise(
     pop = sum(PERWT),
@@ -94,7 +97,7 @@ ipums.means <- ipums %>%
   )
 
 # CPI adjust results
-ipums.means.cpi <- ipums.means %>%
+ipums.commute.means.cpi <- ipums.means %>%
   left_join(cpi, by = "year") %>%
   mutate(
     mean.wages = mean.wages * 237.0 / cpi,
@@ -104,7 +107,7 @@ ipums.means.cpi <- ipums.means %>%
   ) %>%
   select(-cpi)
 
-write_csv(ipums.means.cpi, "results/ipums.means.cpi.csv")
+write_csv(ipums.commute.means.cpi, "results/ipums.commute.means.cpi.csv")
 
 # Compute mean wages for home workers by year and occupation
 ipums.occ.means <- ipums %>%
