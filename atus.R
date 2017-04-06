@@ -6,12 +6,8 @@ library(survey)
 # Export 4 from ATUS
 # "Time spent working from home by broad occupation and class of worker (2003-2015) w/ CSV"
 
-# NB: Earnings do not appear to be reliable in this data and should be ignored.
-
 # ATUS estimation formulas, see page 37:
 # https://www.bls.gov/tus/atususersguide.pdf
-
-# TODO: Exclude self-employed workers
 
 # Read ATUS export
 atus <- read_csv("atus_00004.csv", col_types="cdiid")
@@ -22,10 +18,10 @@ atus$year <- as.factor(atus$YEAR)
 # Flag for those that worked at home at all
 atus$homeworkers <- (atus$workingfromhome > 0)
 
-# Flag for those that worked at least 6 hours at home
-atus$homeworkers.fullday <- (atus$workingfromhome >= 360)
+# Flag for those that worked at least 7 hours at home (~ 35 hours a week)
+atus$homeworkers.fullday <- (atus$workingfromhome >= 420)
 
-# Flag for wage-workers
+# Flag for wage-workers (not self-employed)
 atus$wageworkers <- (atus$CLWKR <= 5)
 
 # Load ATUS OCC2 code mapping
@@ -36,8 +32,18 @@ atus <- atus %>%
   left_join(occ2, by = c("OCC2" = "occ2")) %>%
   rename(occupation = description)
 
-# Count and means for all employees that ever worked at home
+# Counts and means for all employees by homeworker or not
 atus.totals <- atus %>%
+  filter(wageworkers) %>%
+  group_by(year, homeworkers.fullday) %>%
+  summarise(
+    n = sum(WT06) / 365
+  )
+
+write_csv(atus.totals, "results/atus.totals.csv")
+
+# Count and means for all employees that worked at home for any time
+atus.anytime.totals <- atus %>%
   filter(homeworkers & wageworkers) %>%
   group_by(year) %>%
   summarise(
@@ -45,7 +51,7 @@ atus.totals <- atus %>%
     mean.mins = sum(workingfromhome * WT06) / sum(WT06)
   )
 
-write_csv(atus.means, "results/atus.totals.csv")
+write_csv(atus.anytime.totals, "results/atus.anytime.totals.csv")
 
 # Count of fullday homeworkers
 atus.fullday.totals <- atus %>%
@@ -58,7 +64,7 @@ atus.fullday.totals <- atus %>%
 write_csv(atus.fullday.totals, "results/atus.fullday.totals.csv")
 
 # Counts and means by occupation
-atus.occ.totals <- atus %>%
+atus.anytime.occ.totals <- atus %>%
   filter(homeworkers & wageworkers) %>%
   group_by(year, occupation) %>%
   summarise(
@@ -66,7 +72,7 @@ atus.occ.totals <- atus %>%
     mean.mins = sum(workingfromhome * WT06) / sum(WT06)
   )
 
-write_csv(atus.occ.totals, "results/atus.occ.totals.csv")
+write_csv(atus.anytime.occ.totals, "results/atus.anytime.occ.totals.csv")
 
 # Count of fullday homeworkers by occupation
 atus.fullday.occ.totals <- atus %>%
