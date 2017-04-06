@@ -3,11 +3,11 @@ library(dplyr)
 library(reshape2)
 library(survey)
 
-# Export 29 from IPUMS
-# "Method of travel to work, wages, occupation, class of worker, and usual hours worked (1980, 1990, 2000-2015) w/ CSV"
+# Export 30 from IPUMS
+# "Method of travel to work, wages, occupation, industry, class of worker, and usual hours worked (1980, 1990, 2000-2015) w/ CSV"
 
 # Read IPUMS export
-ipums.orig <- read_csv("usa_00029.csv", col_types="ciiiiidi")
+ipums.orig <- read_csv("usa_00030.csv", col_types="ciiiiiidi")
 
 # Filter to only full-time wageworkers (>= 35 hours per week, with wages, and not self-employed)
 ipums <- ipums.orig %>%
@@ -60,6 +60,11 @@ ipums$jobs <- as.factor(ipums$jobs)
 occ <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/occ/description.2010.csv", col_types="ic")
 
 occ$description <- factor(occ$description)
+
+# Read industry codes
+ind <- read_csv("ind1990.csv", col_types="ic")
+
+ind$description <- factor(ind$description)
 
 # Read CPI rates
 cpi <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/year/cpi.csv", col_types="cd")
@@ -160,4 +165,15 @@ ipums.jobs.shares <- ipums %>%
 
 write_csv(ipums.jobs.shares, "results/ipums.jobs.shares.csv")
 
+# Compute share of homeworkers by year and industry
+ipums.ind.shares <- ipums %>%
+  group_by(year, IND1990, commute) %>%
+  summarise(
+    pop = sum(PERWT)
+  ) %>%
+  mutate(
+    share = pop / sum(pop)
+  ) %>%
+  left_join(ind, by = c("IND1990" = "ind"))
 
+write_csv(ipums.ind.shares, "results/ipums.ind.shares.csv")
