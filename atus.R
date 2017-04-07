@@ -3,8 +3,8 @@ library(dplyr)
 library(reshape2)
 library(survey)
 
-# Export 5 from ATUS
-# "Time spent working from home by broad occupation and class of worker w/ weekday and holiday flags (2003-2015) w/ CSV"
+# Export 6 from ATUS
+# "Time spent working from home by broad occupation, class of worker, and hours worked w/ weekday and holiday flags (2003-2015) w/ CSV
 
 # ATUS estimation formulas, see page 37:
 # https://www.bls.gov/tus/atususersguide.pdf
@@ -13,7 +13,7 @@ library(survey)
 ANNUAL_WORKDAYS = 251
 
 # Read ATUS export
-atus <- read_csv("atus_00005.csv", col_types="ciidiid")
+atus <- read_csv("atus_00006.csv", col_types="ciidiiid")
 
 # Convert years to a factor
 atus$year <- as.factor(atus$YEAR)
@@ -30,6 +30,9 @@ atus$homeworkers.fullday <- (atus$workingfromhome >= 420)
 # Flag for wage-workers (not self-employed)
 atus$wageworkers <- (atus$CLWKR <= 5)
 
+# Flag for fulltime
+atus$fulltime <- (atus$UHRSWORK1 >= 35)
+
 # Load ATUS OCC2 code mapping
 occ2 <- read_csv("atus-occ2.csv", col_types="ic")
 
@@ -40,7 +43,7 @@ atus <- atus %>%
 
 # Counts and means for all employees by homeworker or not
 atus.totals <- atus %>%
-  filter(workday & wageworkers) %>%
+  filter(fulltime & workday & wageworkers) %>%
   group_by(year, homeworkers.fullday) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS
@@ -50,7 +53,7 @@ write_csv(atus.totals, "results/atus.totals.csv")
 
 # Count and means for all employees that worked at home for any time
 atus.anytime.totals <- atus %>%
-  filter(workday & homeworkers & wageworkers) %>%
+  filter(fulltime & workday & homeworkers & wageworkers) %>%
   group_by(year) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS,
@@ -61,7 +64,7 @@ write_csv(atus.anytime.totals, "results/atus.anytime.totals.csv")
 
 # Count of fullday homeworkers
 atus.fullday.totals <- atus %>%
-  filter(workday & homeworkers.fullday & wageworkers) %>%
+  filter(fulltime & workday & homeworkers.fullday & wageworkers) %>%
   group_by(year) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS
@@ -71,7 +74,7 @@ write_csv(atus.fullday.totals, "results/atus.fullday.totals.csv")
 
 # Counts and means by occupation
 atus.anytime.occ.totals <- atus %>%
-  filter(workday & homeworkers & wageworkers) %>%
+  filter(fulltime & workday & homeworkers & wageworkers) %>%
   group_by(year, occupation) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS,
@@ -82,7 +85,7 @@ write_csv(atus.anytime.occ.totals, "results/atus.anytime.occ.totals.csv")
 
 # Compute share of employees that worked at home for any time by industry
 atus.anytime.occ.shares <- atus %>%
-  filter(workday & wageworkers) %>%
+  filter(fulltime & workday & wageworkers) %>%
   group_by(year, occupation, homeworkers) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS
@@ -95,7 +98,7 @@ write_csv(atus.anytime.occ.shares, "results/atus.anytime.occ.shares.csv")
 
 # Count of fullday homeworkers by occupation
 atus.fullday.occ.totals <- atus %>%
-  filter(workday & homeworkers.fullday & wageworkers) %>%
+  filter(fulltime & workday & homeworkers.fullday & wageworkers) %>%
   group_by(year, occupation) %>%
   summarise(
     n = sum(WT06) / ANNUAL_WORKDAYS
@@ -124,7 +127,7 @@ atus.pooled$pool.year <- as.factor(atus.pooled$pool.year)
 
 # Pooled count and means for all employees that worked at home for any time
 atus.pooled.anytime.totals <- atus.pooled %>%
-  filter(workday & homeworkers & wageworkers) %>%
+  filter(fulltime & workday & homeworkers & wageworkers) %>%
   group_by(pool.year) %>%
   summarise(
     n = sum(WT06) / (ANNUAL_WORKDAYS * 3),
@@ -135,7 +138,7 @@ write_csv(atus.pooled.anytime.totals, "results/atus.pooled.anytime.totals.csv")
 
 # Pooled counts and means by occupation
 atus.pooled.anytime.occ.totals <- atus.pooled %>%
-  filter(workday & homeworkers & wageworkers) %>%
+  filter(fulltime & workday & homeworkers & wageworkers) %>%
   group_by(pool.year, occupation) %>%
   summarise(
     n = sum(WT06) / (ANNUAL_WORKDAYS * 3),
