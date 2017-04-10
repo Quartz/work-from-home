@@ -9,7 +9,7 @@ library(survey)
 # ATUS estimation formulas, see page 37:
 # https://www.bls.gov/tus/atususersguide.pdf
 
-# Number of non-holiday weekdays most years
+# Average number of non-holiday weekdays each year
 ANNUAL_WORKDAYS = 251
 
 # Read ATUS export
