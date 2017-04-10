@@ -1,0 +1,103 @@
+Description: Time spent working from home by broad occupation, class of worker, and hours worked w/ weekday and holiday flags (2003-2015) w/ CSV
+Samples selected:
+      ATUS 2003                                         regular
+      ATUS 2004                                         regular
+      ATUS 2005                                         regular
+      ATUS 2006                                         regular
+      ATUS 2007                                         regular
+      ATUS 2008                                         regular
+      ATUS 2009                                         regular
+      ATUS 2010                                         regular
+      ATUS 2011                                         regular
+      ATUS 2012                                         regular
+      ATUS 2013                                         regular
+      ATUS 2014                                         regular
+      ATUS 2015                                         regular
+File Type:                    rectangular
+Case Selection:               No
+  Variable               Columns        Len    2003    2004    2005    2006    2007    2008    2009    2010    2011    2012    2013    2014    2015   
+  YEAR               1   1-5            5      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  DAY                2   6-7            2      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  HOLIDAY            2   8-9            2      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  WT06               2  10-26          17      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  CLWKR              2  27-28           2      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  OCC2               2  29-32           4      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  UHRSWORK1          2  33-35           3      X       X       X       X       X       X       X       X       X       X       X       X       X 
+  WORKINGFROMHOME    2  36-39           4      X       X       X       X       X       X       X       X       X       X       X       X       X 
+
+Variable Availability Key:
+All Years X - available in this sample
+All Years . - not available in this sample
+
+Time Use Variables:
+  WORKINGFROMHOME
+    Activity specifications:
+        050100  Working
+
+
+    Time specifications:
+      4:00 am - 4:00 am
+
+    Secondary activity specifications: 
+      None specified
+
+    Location specifications:
+          0101  Respondent's home or yard
+
+    With whom specifications:
+      None specified
+
+
+ DAY		ATUS interview day of the week
+01		Sunday
+02		Monday
+03		Tuesday
+04		Wednesday
+05		Thursday
+06		Friday
+07		Saturday
+99		NIU (Not in universe)
+
+ HOLIDAY		Day of ATUS interview was a holiday
+00		No
+01		Yes
+99		NIU (Not in universe)
+
+ CLWKR		Class of worker, main job
+01		Government, federal
+02		Government, state
+03		Government, local
+04		Private, for profit
+05		Private, nonprofit
+06		Self-employed, incorporated
+07		Self-employed, unincorporated
+08		Without pay
+99		NIU (Not in universe)
+
+ OCC2		General occupation category, main job
+		Management, business, and financial occupations
+0110		Management occupations
+0111		Business and financial operations occupations
+		Professional and related occupations
+0120		Computer and mathematical science occupations
+0121		Architecture and engineering occupations
+0122		Life, physical, and social science occupations
+0123		Community and social service occupations
+0124		Legal occupations
+0125		Education, training, and library occupations
+0126		Arts, design, entertainment, sports, and media occupations
+0127		Healthcare practitioner and technical occupations
+		Service Occupations
+0130		Healthcare support occupations
+0131		Protective service occupations
+0132		Food preparation and serving related occupations
+0133		Building and grounds cleaning and maintenance occupations
+0134		Personal care and service occupations
+0140		Sales and related occupations
+0150		Office and administrative support occupations
+0160		Farming, fishing, and forestry occupations
+0170		Construction and extraction occupations
+0180		Installation, maintenance, and repair occupations
+0190		Production occupations
+0200		Transportation and material moving occupations
+9999		NIU (Not in universe)

@@ -69,7 +69,7 @@ ind$description <- factor(ind$description)
 # Read CPI rates
 cpi <- read_csv("https://raw.githubusercontent.com/wireservice/lookup/master/year/cpi.csv", col_types="cd")
 
-# Function to perform inflation adjustment
+# Function to perform inflation adjustment on a list of columns
 cpi.adjust <- function(input, year.column, columns) {
   temp <- left_join(input, cpi, by = year.column)
   
@@ -83,7 +83,7 @@ cpi.adjust <- function(input, year.column, columns) {
 }
 
 # Compute mean wages by year and commute
-# Perfect match for results from IPUMS online
+# NB: Results are a perfect match for IPUMS online analysis
 ipums.commute.means <- ipums %>%
   group_by(year, commute) %>%
   summarise(
@@ -131,14 +131,6 @@ ipums.jobs.means.cpi <- cpi.adjust(ipums.jobs.means.cpi, "year", c("mean.wages",
 
 write_csv(ipums.jobs.means.cpi, "results/ipums.jobs.means.cpi.csv")
 
-# Filter to just occupations that have ever had a large number of homeworkers
-ipums.jobs.big.means.cpi <- ipums.jobs.means.cpi %>%
-  group_by(jobs) %>%
-  filter(any(pop >= 200000)) %>%
-  ungroup()
-
-write_csv(ipums.jobs.big.means.cpi, "results/ipums.jobs.big.means.cpi.csv")
-
 # Compute mean wages by job category and commute type for 2015 only
 ipums.jobs.2015.means <- ipums %>%
   filter(year == 2015) %>%
@@ -153,7 +145,7 @@ ipums.jobs.2015.means <- ipums %>%
 
 write_csv(ipums.jobs.2015.means, "results/ipums.jobs.2015.means.csv")
 
-# Compute fraction of occupation that homeworks by year
+# Compute fraction of occupation that works from home by year
 ipums.jobs.shares <- ipums %>%
   group_by(year, jobs, commute) %>%
   summarise(
